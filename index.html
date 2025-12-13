@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Whiteboard</title>
+    
+    <!-- --- NEW: Adding a nice font --- -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <!-- --- NEW: A sleek vertical toolbar --- -->
+    <div class="toolbar">
+        <div class="toolbar-section">
+            <h3 class="toolbar-title">Tools</h3>
+            <div class="tool-button" id="tool-pen" title="Pen">🖊️</div>
+            <div class="tool-button" id="tool-pencil" title="Pencil">✏️</div>
+            <div class="tool-button" id="tool-brush" title="Brush">🖌️</div>
+            <div class="tool-button" id="tool-eraser" title="Eraser">🧼</div>
+        </div>
+
+        <div class="toolbar-section">
+            <h3 class="toolbar-title">Size</h3>
+            <!-- --- UPDATED: Added a class for styling --- -->
+            <input type="range" id="stroke-slider" min="1" max="50" value="5" class="slider">
+        </div>
+
+        <div class="toolbar-section">
+            <h3 class="toolbar-title">Colors</h3>
+            <div class="color-palette">
+                <!-- --- UPDATED: Using hex codes for IDs --- -->
+                <div class="color-swatch" id="#000000" style="background-color: #000000;"></div>
+                <div class="color-swatch" id="#e74c3c" style="background-color: #e74c3c;"></div>
+                <div class="color-swatch" id="#3498db" style="background-color: #3498db;"></div>
+                <div class="color-swatch" id="#2ecc71" style="background-color: #2ecc71;"></div>
+                <div class="color-swatch" id="#f1c40f" style="background-color: #f1c40f;"></div>
+                <div class="color-swatch" id="#9b59b6" style="background-color: #9b59b6;"></div>
+                <div class="color-swatch" id="#e67e22" style="background-color: #e67e22;"></div>
+            </div>
+        </div>
+        
+        <div class="toolbar-section actions">
+            <div class="tool-button" id="tool-clear" title="Clear All">🗑️</div>
+        </div>
+    </div>
+    
+    <!-- The canvas now lives next to the toolbar -->
+    <main class="drawing-area">
+        <canvas id="whiteboard-canvas"></canvas>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
+
