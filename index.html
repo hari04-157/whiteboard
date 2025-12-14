@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dynamic Whiteboard</title>
     
-    <!-- --- NEW: Adding a nice font --- -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -14,7 +13,6 @@
 </head>
 <body>
     
-    <!-- --- NEW: A sleek vertical toolbar --- -->
     <div class="toolbar">
         <div class="toolbar-section">
             <h3 class="toolbar-title">Tools</h3>
@@ -26,14 +24,12 @@
 
         <div class="toolbar-section">
             <h3 class="toolbar-title">Size</h3>
-            <!-- --- UPDATED: Added a class for styling --- -->
             <input type="range" id="stroke-slider" min="1" max="50" value="5" class="slider">
         </div>
 
         <div class="toolbar-section">
             <h3 class="toolbar-title">Colors</h3>
             <div class="color-palette">
-                <!-- --- UPDATED: Using hex codes for IDs --- -->
                 <div class="color-swatch" id="#000000" style="background-color: #000000;"></div>
                 <div class="color-swatch" id="#e74c3c" style="background-color: #e74c3c;"></div>
                 <div class="color-swatch" id="#3498db" style="background-color: #3498db;"></div>
@@ -49,7 +45,6 @@
         </div>
     </div>
     
-    <!-- The canvas now lives next to the toolbar -->
     <main class="drawing-area">
         <canvas id="whiteboard-canvas"></canvas>
     </main>
@@ -58,4 +53,3 @@
     <script src="client.js"></script>
 </body>
 </html>
-

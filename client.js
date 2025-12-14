@@ -7,27 +7,28 @@ const socket = io();
 const canvas = document.getElementById('whiteboard-canvas');
 const ctx = canvas.getContext('2d');
 
-// --- NEW: Resize canvas to fit its container ---
+// --- Resize canvas to fit its container ---
 function resizeCanvas() {
     const container = document.querySelector('.drawing-area');
-    // Subtract margins
-    canvas.width = container.clientWidth - 30;
-    canvas.height = container.clientHeight - 30;
+    // Set exact pixel size to match display size prevents blurriness
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
 }
 window.addEventListener('resize', resizeCanvas);
-resizeCanvas(); // Initial size
+// Small delay to ensure layout is ready
+setTimeout(resizeCanvas, 100); 
 
 // 3. Setup drawing variables
 let drawing = false;
 let lastX = 0;
 let lastY = 0;
 
-// --- NEW: Dynamic Tool State ---
+// --- Dynamic Tool State ---
 let currentTool = 'pencil';
 let currentColor = '#000000';
 let currentWidth = 5;
 
-// --- NEW: Get All Tool Elements ---
+// --- Get All Tool Elements ---
 const toolButtons = {
     pen: document.getElementById('tool-pen'),
     pencil: document.getElementById('tool-pencil'),
@@ -38,38 +39,30 @@ const clearTool = document.getElementById('tool-clear');
 const strokeSlider = document.getElementById('stroke-slider');
 const colorSwatches = document.querySelectorAll('.color-swatch');
 
-// --- NEW: UI Update Functions ---
+// --- UI Update Functions ---
 function updateSelectedTool(selectedTool) {
     currentTool = selectedTool;
-    // Remove 'selected' from all buttons
     Object.values(toolButtons).forEach(button => button.classList.remove('selected'));
-    // Add 'selected' to the clicked button
     toolButtons[selectedTool].classList.add('selected');
 }
 
 function updateSelectedColor(selectedColor) {
     currentColor = selectedColor;
-    // Remove 'selected-color' from all swatches
     colorSwatches.forEach(swatch => swatch.classList.remove('selected-color'));
-    // Add 'selected-color' to the clicked swatch
     document.getElementById(selectedColor).classList.add('selected-color');
 }
 
-// Set initial selected tool and color on load
+// Set initial state
 updateSelectedTool(currentTool);
 updateSelectedColor(currentColor);
 
-
 // 4. The Master Drawing Function
-// This function can draw ANY tool, based on the data it receives.
-// This is much cleaner than the old version.
 function drawLine(data) {
     const { x1, y1, x2, y2, tool, color, width } = data;
 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     
-    // Set tool properties
     switch (tool) {
         case 'pen':
             ctx.globalAlpha = 1.0;
@@ -77,43 +70,71 @@ function drawLine(data) {
             ctx.lineWidth = width;
             break;
         case 'pencil':
-            ctx.globalAlpha = 0.7; // Pencil is slightly transparent
+            ctx.globalAlpha = 0.7;
             ctx.strokeStyle = color;
             ctx.lineWidth = width;
             break;
         case 'brush':
-            ctx.globalAlpha = 0.3; // Brush is very transparent
+            ctx.globalAlpha = 0.3;
             ctx.strokeStyle = color;
-            ctx.lineWidth = width * 2; // Brush is wider
+            ctx.lineWidth = width * 2;
             break;
         case 'eraser':
             ctx.globalAlpha = 1.0;
-            ctx.strokeStyle = '#ffffff'; // Eraser is just white
-            ctx.lineWidth = width * 3; // Eraser is much wider
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = width * 3;
             break;
     }
 
-    // Draw the path
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
 }
 
-// 5. Local Event Listeners
-canvas.addEventListener('mousedown', (e) => {
+// 5. HELPER: Get Coordinates for Mouse OR Touch
+function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    
+    // Check for touch event
+    if (e.touches && e.touches.length > 0) {
+        return {
+            x: e.touches[0].clientX - rect.left,
+            y: e.touches[0].clientY - rect.top
+        };
+    }
+    // Fallback to mouse event
+    return {
+        x: e.offsetX,
+        y: e.offsetY
+    };
+}
+
+// 6. Universal Event Handlers
+function startDrawing(e) {
+    // Prevent scrolling on touch devices
+    if(e.type === 'touchstart') {
+        // e.preventDefault(); // Sometimes needed, but touch-action in CSS handles most
+    }
+    
     drawing = true;
-    lastX = e.offsetX;
-    lastY = e.offsetY;
-});
+    const pos = getPos(e);
+    lastX = pos.x;
+    lastY = pos.y;
+}
 
-canvas.addEventListener('mousemove', (e) => {
+function moveDrawing(e) {
     if (!drawing) return;
+    
+    // Important: Prevent scrolling while dragging finger
+    if(e.type === 'touchmove') {
+        e.preventDefault();
+    }
 
-    const currentX = e.offsetX;
-    const currentY = e.offsetY;
+    const pos = getPos(e);
+    const currentX = pos.x;
+    const currentY = pos.y;
 
-    // Create the data packet
     const drawData = {
         x1: lastX,
         y1: lastY,
@@ -127,22 +148,30 @@ canvas.addEventListener('mousemove', (e) => {
     // Draw locally
     drawLine(drawData);
 
-    // Send to server for others
+    // Send to server
     socket.emit('drawing', drawData);
 
-    // Update the last position
     lastX = currentX;
     lastY = currentY;
-});
+}
 
-canvas.addEventListener('mouseup', () => {
+function stopDrawing(e) {
     drawing = false;
-});
-canvas.addEventListener('mouseout', () => {
-    drawing = false;
-});
+}
 
-// --- NEW: Tool Listeners ---
+// 7. Attach Listeners (Mouse & Touch)
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('touchstart', startDrawing, { passive: false });
+
+canvas.addEventListener('mousemove', moveDrawing);
+canvas.addEventListener('touchmove', moveDrawing, { passive: false });
+
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseout', stopDrawing);
+canvas.addEventListener('touchend', stopDrawing);
+canvas.addEventListener('touchcancel', stopDrawing);
+
+// --- Tool Listeners ---
 Object.keys(toolButtons).forEach(toolName => {
     toolButtons[toolName].addEventListener('click', () => {
         updateSelectedTool(toolName);
@@ -156,7 +185,6 @@ strokeSlider.addEventListener('input', (e) => {
 colorSwatches.forEach(swatch => {
     swatch.addEventListener('click', () => {
         updateSelectedColor(swatch.id);
-        // Bonus: Switch back to pen when a color is picked
         updateSelectedTool('pen'); 
     });
 });
@@ -166,10 +194,8 @@ clearTool.addEventListener('click', () => {
     socket.emit('clear-canvas');
 });
 
-// 6. Listen for data from the server
+// 8. Listen for data from server
 socket.on('drawing', (data) => {
-    // This is a drawing from ANOTHER user.
-    // We just pass their data to our master draw function.
     drawLine(data);
 });
 
